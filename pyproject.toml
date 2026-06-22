@@ -1,0 +1,10 @@
+[project]
+name = "basic-rag-setup"
+version = "0.1.0"
+description = "Basic RAG"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "qdrant-client>=1.12.1",
+    "requests>=2.32.4",
+]
