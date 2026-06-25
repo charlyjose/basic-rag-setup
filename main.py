@@ -1,5 +1,6 @@
 import requests
 from pathlib import Path
+import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
 from qdrant_client.models import PointStruct
@@ -118,6 +119,7 @@ def ask_llm(prompt, model="llama3.2:latest", stream=False):
             "model": model,
             "prompt": prompt,
             "stream": stream,
+            "options": {"num_ctx": 10000},
         },
     )
 
@@ -254,18 +256,200 @@ def extract_from_text(file_path):
     return metadata, content
 
 
-def main():
+def create_chunks(text, chunk_size=200, chunk_overlap=50):
+    """Split text into overlapping chunks for vector storage.
 
-    metadata, content = extract_from_text(
-        "dataset/articles/A_Coding_Agent_That_Gets_Out_Of_The_Way.txt"
+    Each chunk contains up to `chunk_size` words, with `chunk_overlap`
+    words shared between consecutive chunks.
+    """
+    if not text:
+        return []
+
+    words = text.split()
+    if not words:
+        return []
+
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be greater than 0")
+    if chunk_overlap < 0:
+        raise ValueError("chunk_overlap must be 0 or greater")
+    if chunk_overlap >= chunk_size:
+        raise ValueError("chunk_overlap must be less than chunk_size")
+
+    chunks = []
+    start = 0
+    while start < len(words):
+        end = min(start + chunk_size, len(words))
+        chunk = " ".join(words[start:end]).strip()
+        if chunk:
+            chunks.append(chunk)
+        if end == len(words):
+            break
+        start = end - chunk_overlap
+
+    return chunks
+
+
+def prepare_context_for_llm(text, metadata, chunk_size=200, chunk_overlap=50):
+    """Split text into chunks and attach metadata and UUIDs for each chunk.
+
+    Returns a list of payload dicts with keys: `id`, `text`, and `meta`.
+    The `meta` dict contains the original file-level metadata plus
+    `chunk_index` and `source` information.
+    """
+    chunks = create_chunks(text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    payloads = []
+    for idx, chunk_text in enumerate(chunks):
+        uid = uuid.uuid4().hex
+        meta = {
+            "title": metadata.get("title"),
+            "author": metadata.get("author"),
+            "source": metadata.get("path"),
+            "name": metadata.get("name"),
+            "chunk_index": idx,
+            **(metadata.get("other", {}) or {}),
+        }
+        payload = {
+            "id": uid,
+            "text": chunk_text,
+            "meta": meta,
+        }
+        payloads.append(payload)
+
+    return payloads
+
+
+def upsert_chunks_to_qdrant(
+    collection_name, payloads, embeddings, vector_field_name=None
+):
+    """Upsert chunk payloads and corresponding embeddings into Qdrant.
+
+    - `payloads` should be a list of dicts as returned by
+      `prepare_context_for_llm` (with `id`, `text`, `meta`).
+    - `embeddings` should be a list of vectors with the same order/length
+      as `payloads`.
+    """
+    if not payloads:
+        return None
+    if not embeddings:
+        raise ValueError("embeddings list is empty")
+    if len(payloads) != len(embeddings):
+        raise ValueError("Number of payloads and embeddings must match")
+
+    points = []
+    for payload, vector in zip(payloads, embeddings):
+        p = PointStruct(
+            id=payload["id"],
+            vector=vector,
+            payload={**payload["meta"], "text": payload["text"]},
+        )
+        points.append(p)
+
+    client.upsert(collection_name=collection_name, points=points)
+    return True
+
+
+def create_text_embeddings(texts, model="mxbai-embed-large:335m"):
+    """Create embeddings for a list of texts using the specified model."""
+    if not texts:
+        return []
+
+    response = requests.post(
+        url="http://localhost:11434/api/embed",
+        json={"model": model, "input": texts},
     )
 
-    collection_name = "test"
+    data = response.json()
+    embeddings = data.get("embeddings", [])
+    return embeddings
+
+
+def add_new_context_to_vector_db(
+    collection_name,
+    file_path=None,
+    folder_path=None,
+    chunk_size=200,
+    chunk_overlap=50,
+    model="mxbai-embed-large:335m",
+):
+    """Add new file(s) to the Qdrant vector DB for LLM context.
+
+    Either `file_path` or `folder_path` must be provided. When a folder is
+    provided, every `.txt` file in the folder and subfolders is processed.
+    """
+    create_collection(collection_name)
+
+    if bool(file_path) == bool(folder_path):
+        raise ValueError("Provide exactly one of file_path or folder_path")
+
+    files_to_process = []
+    if file_path:
+        path = Path(file_path)
+        if not path.exists() or not path.is_file():
+            raise ValueError(f"File not found: {file_path}")
+        files_to_process = [path]
+    else:
+        folder = Path(folder_path)
+        if not folder.exists() or not folder.is_dir():
+            raise ValueError(f"Folder not found: {folder_path}")
+        files_to_process = sorted(folder.rglob("*.txt"))
+
+    total_chunks = 0
+    for path in files_to_process:
+        metadata, content = extract_from_text(path)
+        payloads = prepare_context_for_llm(
+            content,
+            metadata,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+        )
+        if not payloads:
+            continue
+
+        embeddings = create_text_embeddings(
+            [payload["text"] for payload in payloads], model=model
+        )
+        upsert_chunks_to_qdrant(collection_name, payloads, embeddings)
+        total_chunks += len(payloads)
+
+    return total_chunks
+
+
+def main():
+    # collection_name = "test"
     # create_collection(collection_name)
     # add_dummy_data(collection_name)
 
-    # prompt = input("Enter a search prompt: ")
-    prompt = "What do I like to do?"
+    collection_name = "articles"
+    create_collection(collection_name)
+
+    # metadata, content = extract_from_text(
+    #     "dataset/articles/A_Coding_Agent_That_Gets_Out_Of_The_Way.txt"
+    # )
+
+    # payloads = prepare_context_for_llm(
+    #     content, metadata, chunk_size=200, chunk_overlap=50
+    # )
+
+    # embeddings = create_text_embeddings(
+    #     [payload["text"] for payload in payloads], model="mxbai-embed-large:335m"
+    # )
+
+    # upsert_chunks_to_qdrant(collection_name, payloads, embeddings)
+
+    # chunks_count = add_new_context_to_vector_db(
+    #     collection_name="articles",
+    #     folder_path="dataset/articles",
+    #     chunk_size=200,
+    #     chunk_overlap=50,
+    #     model="mxbai-embed-large:335m",
+    # )
+    # print(f"Total chunks added to vector DB: {chunks_count}")
+
+    # exit()
+
+    prompt = input("Enter a search prompt: ")
+    # prompt = "What do I like to do?"
     contexts = get_relevant_context_from_vector_db(collection_name, prompt, top_k=5)
 
     print_divider()
@@ -287,9 +471,10 @@ def main():
 
     print_divider()
 
-    llm_response = ask_llm(augmented_llm_prompt, model="llama3.2:latest")
-    # print("Raw LLM Response:")
-    # print(llm_response)
+    llm_model = "gemma3:12b-it-qat"
+    llm_response = ask_llm(augmented_llm_prompt, model=llm_model)
+    print("Raw LLM Response:")
+    print(llm_response)
 
     print_divider()
 
