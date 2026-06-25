@@ -1,0 +1,58 @@
+----------------------------
+Title: Pi: A Coding Agent That Gets Out Of The Way
+Author: Maximilian Schwarzmuller
+----------------------------
+
+Pi: A Coding Agent That Gets Out Of The Way
+There are many AI coding tools now. Some live in your editor. Some want to be your editor. Some want to be an entire product management workflow with a chat box attached.
+
+Pi takes a different approach: it's a coding agent for the terminal that tries very hard to stay small, scriptable and adaptable.
+
+And I like that a lot.
+
+What Is Pi?
+Pi is a terminal-based coding agent. In practical terms, that means you start it in a project folder, talk to it, and it can inspect files, edit code, run commands and help you move through a task.
+
+So yes, it's in the same broad category as tools like Claude Code, Codex-style terminal agents and the various agent modes that are now appearing everywhere.
+
+But Pi's core idea is a bit different. It doesn't try to ship every possible workflow as a built-in feature. Instead, the default setup is intentionally minimal, and the interesting part is that you can shape it around your own workflow with skills, extensions, prompt templates, themes and packages.
+
+To be clear: That doesn't make it magically better for everyone. If you want a tool that makes every workflow decision for you, Pi may feel a bit too bare-bones at first.
+
+But if you like tools that get out of the way and can be adapted, Pi is pretty great.
+
+How It Works
+At its heart, Pi connects a capable language model with a small set of tools. The model can read files, write files, edit existing files and run shell commands. Depending on configuration, it can also use additional built-in or extension-provided tools.
+
+You can run it interactively in the terminal, use it in print or JSON mode for scripts, or even embed it via its SDK or RPC mode. That makes it useful both as a daily coding assistant and as a building block for more custom automation.
+
+Sessions are stored and can be resumed, branched or compacted. Project instructions can be loaded from context files like AGENTS.md. Skills can provide task-specific instructions. Extensions can add custom tools, commands, UI elements or safety checks.
+
+In other words: Pi is not just "chat, but in a terminal". It's more like a small agent harness that lets an LLM operate on a real codebase, while still leaving the workflow design in your hands.
+
+Why I Think It's Great
+The part I appreciate most is the philosophy.
+
+Pi does not force a specific agent workflow on you. It doesn't need built-in sub-agents, a mandatory plan mode, a built-in todo system or permission popups everywhere. If you want those things, you can add them with extensions or install a package that provides them.
+
+That sounds less exciting than a long feature list, but I think it's the better default for a developer tool.
+
+Because developers are annoyingly different. Some want aggressive automation. Some want a read-only reviewer. Some want a custom deployment tool. Some want SSH integration, browser automation, screenshots, structured planning, or none of that.
+
+Pi's answer is basically: build or install the workflow you want.
+
+Of course, that also means you should be careful. Extensions and packages can run code with your system permissions, and an agent that can edit files and run commands deserves the same skepticism as any other powerful automation tool.
+
+But that's true for this entire category of tools. The difference is that Pi makes the shape of the tool feel more explicit and more hackable.
+
+Where It Fits
+Personally, I don't see Pi as a replacement for knowing how to code. No coding agent is.
+
+Instead, I see it as a very useful layer between me, the model and my project. I can ask for a focused change, let it inspect the actual codebase, review the diff, steer it, and keep the important decisions with me.
+
+That's the AI-assisted development sweet spot for me: not blindly vibe coding an entire app, but also not pretending that LLMs aren't useful.
+
+In the end, Pi is great because it's powerful without being overly opinionated. It's a minimal terminal coding agent that can grow into the tool you want it to be.
+
+And for developer tooling, that's a pretty compelling pitch.
+

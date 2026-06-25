@@ -1,0 +1,103 @@
+----------------------------
+Title: Why LLMs Need GPUs and VRAM
+Author: Maximilian Schwarzmuller
+----------------------------
+
+Large Language Models (LLMs) are pushing the boundaries of what AI can do, from writing stories to translating languages.
+
+You might be interested in running one of these impressive "token generators" on your own computer, perhaps using tools like LM Studio or Ollama.
+
+There is a challenge, though: these models can demand a lot of VRAM (Video RAM), and they strongly prefer running on a GPU instead of your main CPU (which is also possible, though - it's just way slower).
+
+Let's break down why, and what's happening technically, in a way that's easy to understand.
+
+LLMs Are Parameter-powered Token Generators
+At their heart, LLMs are incredibly complex systems designed to predict the next piece of text (or "token") given some input.
+
+When you give them a prompt (like "Tell me a joke about a robot"), they process it and then predict the most likely next word, then the word after that, and so on, to build a coherent response.
+
+They learn how to do this by being trained on massive amounts of text data. All this learned knowledge - the patterns, the connections, the "understanding" of language - is stored in what are called the model's parameters.
+
+Think of parameters as the individual "neurons" or "knowledge points" within the LLM's brain.
+
+The more parameters a model has, the more information and nuance it can generally hold, leading to more capable and sophisticated responses.
+
+Modern open models you might encounter can vary hugely in size:
+
+Small models: Models like Gemma 3 1b or some versions of Llama 3 8B have around 1 to 8 billion parameters.
+Medium/large models: Models such as Gemma 3 27b, Llama 4 Scout (109b), and many other bigger (e.g., DeepSeek R1), open models can have 27 billion, 109 billion, or even hundreds of billions of parameters.
+VRAM: The LLM's High-Speed Workbench
+So, what do these billions of parameters have to do with VRAM?
+
+VRAM, or Video RAM, is a special, super-fast type of memory located directly on your graphics card (GPU). It's designed for the rapid data access that graphics-intensive tasks (like gaming, or, as it turns out, running LLMs) require.
+
+When an LLM is working to generate text, it needs to constantly access and use its parameters. All those billions of parameters need to be loaded into memory so the model can access and use them during inference.
+
+But why VRAM over regular RAM?
+
+The answer is: Speed. GPUs are much better at handling the kind of parallel processing that LLMs require, and (for GPUs) VRAM is much faster to access than regular RAM.
+
+Imagine an LLM as a master chef trying to cook an incredibly complex dish (generate your text).
+
+The parameters are all the ingredients, spices, and recipe notes the chef needs.
+VRAM is like the chef's immediate workbench or countertop. It's smaller than the main pantry, but everything on it is instantly accessible.
+Regular RAM (the memory your computer uses for most applications) is like the main pantry. It can store a lot more, but it takes longer for the chef to go and fetch things from it.
+For an LLM to generate text quickly and efficiently, it needs its parameters (ingredients) on that super-fast workbench (VRAM). If the parameters were only in regular RAM, the process would be much, much slower because the LLM would constantly be waiting for data to be fetched. It's like the chef having to walk to the pantry for every single spice for every single step.
+
+So, if a model like Gemma 3 27b has roughly 27 billion parameters, and each parameter takes up a certain amount of space (say, 2 bytes when not using heavy quantization), you'd need at least 54 billion bytes, or 54 gigabytes (GB), of storage for those parameters.
+
+What is Quantization?
+Quantization is a technique that reduces the size of the model by reducing the precision of the parameters.
+
+For example, instead of using 16-bit floating-point numbers (FP16) for each parameter, quantization might use 8-bit integers (INT8) or even 4-bit integers (INT4). That would mean that a model with 27 billion parameters could be reduced to around 13.5 GB (for INT8) or even 6.75 GB (for INT4) of VRAM.
+
+I cover quantization (and running open models locally in general) in more detail in my course "Local LLMs via Ollama & LM Studio - The Practical Guide".
+
+To run efficiently, a good chunk of this needs to fit into VRAM. This is why you see high-end GPUs with 16GB, 24GB, or even more VRAM becoming popular for LLM users.
+
+But there's some good news!
+
+Thanks to quantization, you can often run sizeable models with way less VRAM (without losing significant quality). For example, a quantized version of a 27B model might only need 8GB or 16GB of VRAM, depending on how it's been optimized.
+
+GPU vs. CPU
+You also hear that GPUs are much better than CPUs for running LLMs. Why is that?
+
+Your CPU (Central Processing Unit) is the main brain of your computer. It's designed to be a versatile all-rounder, capable of handling a wide variety of tasks one after another (it can also quickly switch between tasks, hence its multitasking ability). Think of it as a very smart manager, or a small team of highly skilled general-purpose workers.
+
+Your GPU (Graphics Processing Unit), on the other hand, is a specialist. It was originally designed to render graphics for games and visual applications. This involves performing the same calculation on many different pieces of data (pixels) at the exact same time. It has thousands of smaller, simpler cores that excel at parallel processing - doing many similar things at once.
+
+Running an LLM involves a massive number of mathematical operations (especially matrix multiplications) that need to be performed on the model's parameters and the input data.
+
+A CPU would tackle these operations more sequentially, like a few workers trying to build a giant Lego castle one section at a time.
+A GPU tackles them in parallel, like thousands of workers each grabbing a handful of Lego bricks and working on different small parts of the castle all at once.
+This massive parallelism is why GPUs can process the data for LLMs orders of magnitude faster than CPUs. The more parameters a model has, the more calculations are needed, and the bigger the speed advantage of a GPU becomes.
+
+The (V)RAM Bottleneck
+So, the core reasons LLMs need so much VRAM and prefer GPUs are:
+
+Parameter Storage: All (or most) of the model's billions of parameters need to be loaded into memory.
+Speed of Access: VRAM provides much faster access to these parameters than regular RAM, which is crucial for quick text generation.
+Parallel Processing Power: GPUs can perform the necessary calculations on these parameters far more rapidly than CPUs.
+This is why you might have a very powerful computer with a fast CPU and lots of regular RAM (e.g., 64GB), but still struggle to run larger LLMs if your GPU doesn't have enough VRAM.
+
+Apple Silicon Macs To The Win!
+Macs with Apple Silicon chips (M1, M2, etc.) have a unique advantage: they can use their unified memory architecture to share RAM between the CPU and GPU.
+
+Whilst this unified memory is not as fast as dedicated VRAM, it is faster than regular RAM.
+
+Since MacBooks, Mac Minis, and Mac Studios often come with 32GB or more (unified) RAM, this can be a great option for running LLMs without needing a dedicated GPU.
+
+The VRAM on your graphics card becomes the primary bottleneck. If the model's parameters don't fit into VRAM, the system has to constantly swap data between VRAM and regular RAM (or even your hard drive), which drastically slows things down - often to the point of being unusable.
+
+A common misconception might be that if a model is, say, 7 billion parameters, it "only" needs 7GB of VRAM. However, besides the parameters themselves, VRAM also needs to hold the input data (prompt, context), intermediate calculations (activations), and the output.
+
+Furthermore, how parameters are stored (their precision, e.g., 16-bit, 8-bit, or 4-bit through quantization) directly impacts the VRAM footprint. A 7B model at full precision (16-bit) would indeed need around 14GB VRAM just for the weights, before accounting for other overheads.
+
+Quantized versions significantly reduce this, which is what tools like LM Studio often help manage (the models you download from inside LM Studio are typically quantized).
+
+Thanks to quantization, models like Gemma 3 12B (or even some in the 20-40B range) can often run on consumer GPUs with 8GB to 32GB of VRAM.
+
+However, larger models like Llama 4 Scout (109b) will push well beyond what most consumer cards can handle, even when using quantization, requiring high-end GPUs with 48GB or even more VRAM, or specialized multi-GPU setups.
+
+Even the very large MoE (Mixture of Experts) models, like a hypothetical Llama 4 Maverick with 400B total parameters (but only activating 17B for a given request), would still require all 400B parameters (or their quantized versions) to be loaded into memory, making their VRAM requirement immense, despite the computational efficiency per token.
+

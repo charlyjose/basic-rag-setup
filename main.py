@@ -1,4 +1,5 @@
 import requests
+from pathlib import Path
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
 from qdrant_client.models import PointStruct
@@ -164,7 +165,101 @@ def print_divider():
     print("\n" + "-" * 50 + "\n")
 
 
+def extract_metadata_from_text(file_path):
+    """Extract metadata from the top of a text file.
+
+    Supports lines like "Title: ..." and "Author: ..." and retains any
+    additional key/value pairs encountered before the first blank line.
+    """
+    file_path = Path(file_path)
+    metadata = {
+        "path": str(file_path),
+        "name": file_path.name,
+        "title": None,
+        "author": None,
+        "other": {},
+    }
+
+    if not file_path.exists() or not file_path.is_file():
+        return metadata
+
+    with file_path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if not stripped:
+                break
+            if stripped.startswith("-") and len(set(stripped)) == 1:
+                continue
+            if ":" in stripped:
+                key, value = stripped.split(":", 1)
+                key = key.strip().lower()
+                value = value.strip()
+                if not value:
+                    continue
+                if key == "title":
+                    metadata["title"] = value
+                elif key == "author":
+                    metadata["author"] = value
+                else:
+                    metadata["other"][key] = value
+            elif stripped.lower().startswith("file:"):
+                metadata["other"]["file"] = stripped[5:].strip()
+    return metadata
+
+
+def extract_content_from_text(file_path):
+    """Return the main content after the metadata header in a text file."""
+    file_path = Path(file_path)
+    if not file_path.exists() or not file_path.is_file():
+        return ""
+
+    raw_text = file_path.read_text(encoding="utf-8")
+    lines = raw_text.splitlines()
+    header_seen = False
+    content_start = 0
+
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped:
+            if header_seen:
+                content_start = index + 1
+                break
+            continue
+
+        if stripped.startswith("-") and len(set(stripped)) == 1:
+            if header_seen:
+                content_start = index + 1
+                break
+            continue
+
+        if ":" in stripped:
+            header_seen = True
+            continue
+
+        if header_seen:
+            content_start = index
+            break
+        else:
+            # No metadata header found; treat entire file as content.
+            return raw_text.strip()
+
+    content_lines = lines[content_start:]
+    return "\n".join(content_lines).strip()
+
+
+def extract_from_text(file_path):
+    """Extract both metadata and content from a text file."""
+    metadata = extract_metadata_from_text(file_path)
+    content = extract_content_from_text(file_path)
+    return metadata, content
+
+
 def main():
+
+    metadata, content = extract_from_text(
+        "dataset/articles/A_Coding_Agent_That_Gets_Out_Of_The_Way.txt"
+    )
+
     collection_name = "test"
     # create_collection(collection_name)
     # add_dummy_data(collection_name)

@@ -1,0 +1,26 @@
+----------------------------
+Title: My Top 5 Ways of Using Generative AI and LLMs
+Author: Maximilian Schwarzmuller
+----------------------------
+
+If you spend any time on X, chances are you've seen them: screenshots of incredibly complex n8n workflows promising to automate your entire life.
+
+These posts often try to highlight the power of AI agents, and it's easy to feel like you're falling behind if you're not building similar systems.
+
+But don't worry: I also don't run an army of AI agents yet. I'm also not sure if I will anytime soon.
+
+But I do have a couple of use cases where I do actually use AI & LLMs on a (more or less) daily basis.
+
+How LLMs Help Me Get More Done
+So, what does practical AI integration look like for me?
+
+Here's how I leverage generative AI:
+
+AI-Powered Coding Assistants: Tools like GitHub Copilot and Cursor are invaluable for code completion and suggestions. While they can sometimes be too aggressive, the speed boost they provide is significant - especially features like auto-suggestion that predict your next edit.
+Gemini as a Thought Partner: I frequently use ChatGPT (though I'm currently preferring Gemini 2.5) to bounce ideas off of, research complex topics, and challenge my own assumptions. It's about having a discussion partner - not blindly accepting AI-generated answers.
+Deep Research for Informed Content Creation: Gemini Deep Research is fantastic for gathering information quickly (ChatGPT Deep Research is similar). While the reports can be lengthy, they provide a solid starting point backed up by sources (always double-check those sources!).
+Locally Running Open LLMs for Privacy & Cost: For tasks like summarizing text or translating content, I'm increasingly turning to open large language models that I run directly on my MacBook using tools like LM Studio and Ollama. This offers privacy benefits (no sending data to third-party servers) and can be more cost-effective.
+RAG Systems for Specific Internal Projects: I recently built a RAG system with the Gemma model, Qdrant vector database, and Ollama in a livestream. This allows me to query internal documents - like financial data or past projects - and receive targeted answers powered by AI.
+
+Of course, there's more you can do with AI. Everybody has their own workflows and use cases. There's also more I do with AI. I just shared some of the most practical and useful ways I use AI in my day-to-day work.
+
